@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mini-POS-system</title>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap");
+
+      body {
+        font-family: "Open Sans", sans-serif;
+        background-color: black;
+        color: lightcyan;
+        margin-left: 10px;
+        margin-right: 10px;
+        margin-bottom: 50%;
+      }
+
+      #root h1 {
+        text-align: center;
+        margin-top: 50px;
+        margin-bottom: 50px;
+        font-size: 2rem;
+      }
+
+      #root p {
+        font-size: 0.9rem;
+      }
+
+      body label {
+        color: aliceblue;
+      }
+
+      .receipt-output {
+        margin-top: 20px;
+      }
+
+      button {
+        margin-top: 10px;
+        padding: 10px;
+        background-color: #00bfff;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        font-size: 1rem;
+      }
+
+      button:hover {
+        background-color: #0099cc;
+      }
+
+      input[type="number"] {
+        width: 100%;
+        padding: 8px;
+        border-radius: 5px;
+        border: 1px solid #ccc;
+        margin-bottom: 10px;
+        font-size: 1rem;
+      }
+
+      hr {
+        border: 1px solid lightcyan;
+      }
+
+      /* Mobile responsiveness */
+      @media (max-width: 600px) {
+        body {
+          margin-left: 20px;
+          margin-right: 20px;
+          margin-bottom: 20%;
+        }
+
+        #root h1 {
+          font-size: 1.5rem;
+          margin-top: 30px;
+          margin-bottom: 30px;
+        }
+
+        #root p {
+          font-size: 0.8rem;
+        }
+
+        h2 {
+          font-size: 1.2rem;
+        }
+
+        button {
+          font-size: 0.9rem;
+          padding: 8px;
+          margin-bottom: 10px;
+        }
+
+        input[type="number"] {
+          font-size: 0.9rem;
+        }
+
+        .receipt-output p,
+        .receipt-output h3 {
+          font-size: 1rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root">
+      <header>
+        <h1>Mini-POS-system</h1>
+        <p>By: SEANG SENGLY</p>
+      </header>
+      <hr />
+
+      <main>
+        <div id="content">
+          <h2>Give me your receipt</h2>
+
+          <form id="form-receipt-input">
+            <div id="items-container">
+              <div class="item-row">
+                <label>Receipt 1:</label>
+                <input type="number" class="item" value="0" /> <br />
+              </div>
+            </div>
+
+            <button type="button" id="add-item-btn">Add More Receipt</button>
+            <button type="button" id="remove-item-btn">Remove Last Receipt</button>
+            <br /><br />
+
+            <label for="discount">Discount (Optional %) : </label>
+            <input type="number" id="discount" value="0" /> <br /><br />
+
+            <label for="tax">Tax (Optional %) : </label>
+            <input type="number" id="tax" value="0" /> <br /><br />
+          </form>
+          <hr />
+          <div id="output">
+            <h2>This is your total receipt</h2>
+            <p style="color: gray">
+              Check and verify with the seller in case of an unmatching total
+              amount.
+            </p>
+            <div id="auto-cal-result">
+              <!-- Output will be generated here -->
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <script>
+      let itemCount = 1; // Initialize with 1 item
+      const itemsContainer = document.getElementById('items-container');
+
+      // Function to add a new item input
+      document.getElementById('add-item-btn').addEventListener('click', () => {
+        itemCount++;
+        const newItemRow = document.createElement('div');
+        newItemRow.classList.add('item-row');
+        newItemRow.innerHTML = `
+          <label>Receipt ${itemCount}:</label>
+          <input type="number" class="item" value="0" /> <br />
+        `;
+        itemsContainer.appendChild(newItemRow);
+        attachAutoCalculate(); // Attach event listener to the new input
+      });
+
+      // Function to remove the last item input
+      document.getElementById('remove-item-btn').addEventListener('click', () => {
+        if (itemCount > 1) {
+          itemsContainer.removeChild(itemsContainer.lastChild);
+          itemCount--;
+          calculateTotal(); // Recalculate the total after removing
+        }
+      });
+
+      // Function to attach event listeners for real-time calculation
+      function attachAutoCalculate() {
+        document.querySelectorAll('.item').forEach(item => {
+          item.addEventListener('input', calculateTotal);
+        });
+        document.getElementById('discount').addEventListener('input', calculateTotal);
+        document.getElementById('tax').addEventListener('input', calculateTotal);
+      }
+
+      // Initial attachment of event listeners to existing elements
+      attachAutoCalculate();
+
+      function calculateTotal() {
+        const items = document.querySelectorAll('.item'); // Get all item input fields
+        let subtotal = 0;
+
+        // Calculate the subtotal by summing the values of all items
+        items.forEach(item => {
+          subtotal += parseFloat(item.value) || 0;
+        });
+
+        const discountRate = parseFloat(document.getElementById('discount').value) || 0;
+        const taxRate = parseFloat(document.getElementById('tax').value) || 0;
+
+        // Calculate discount
+        const discountAmount = (discountRate / 100) * subtotal;
+        const discountedTotal = subtotal - discountAmount;
+
+        // Calculate tax based on the discounted total
+        const taxAmount = (taxRate / 100) * discountedTotal;
+        const total = discountedTotal + taxAmount;
+
+        // Display the results
+        const resultDiv = document.getElementById('auto-cal-result');
+        resultDiv.innerHTML = `
+          <div class="receipt-output">
+            <p>Subtotal: $${subtotal.toFixed(2)}</p>
+            <p>Discount (${discountRate}%): -$${discountAmount.toFixed(2)}</p>
+            <p>Discounted Total: $${discountedTotal.toFixed(2)}</p>
+            <p>Tax (${taxRate}%): $${taxAmount.toFixed(2)}</p>
+            <h3>Total: $${total.toFixed(2)}</h3>
+          </div>
+        `;
+      }
+    </script>
+  </body>
+</html>
